@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La desaparición del ayllu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.8s ease-in-out; }
+        body { 
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('lima-virreinal.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col font-sans text-white overflow-hidden">
+
+    <div id="game-container" class="flex-grow flex flex-col relative max-w-4xl mx-auto w-full">
+        <!-- Header -->
+        <div class="px-4 py-3 flex justify-between items-center text-sm font-bold bg-black/40">
+            <span id="question-id" class="bg-black/50 px-3 py-1 rounded-full">#100</span>
+            <span>Parte 1</span>
+        </div>
+
+        <!-- Pantalla Inicio -->
+        <div id="start-screen" class="flex-grow flex flex-col items-center justify-center animate-fade-in px-6">
+            <div class="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center text-6xl mb-8 border-4 border-white/20 backdrop-blur-sm shadow-xl" style="font-weight: bold;">?</div>
+            <button onclick="startQuiz()" class="w-full max-w-sm bg-blue-600 py-5 rounded-xl text-2xl font-black shadow-2xl hover:bg-blue-500 active:scale-95 transition-all">Comenzar</button>
+        </div>
+
+        <!-- Pantalla Quiz -->
+        <div id="quiz-ui" class="hidden flex-grow flex flex-col p-4 md:p-6">
+            <h2 id="q-text" class="text-xl md:text-3xl font-bold text-center mb-6 drop-shadow-lg leading-snug"></h2>
+            
+            <div class="relative flex justify-center items-center py-4">
+                <div id="timer" class="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white">20</div>
+            </div>
+
+            <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow content-center">
+                <button onclick="handleAnswer(0)" id="btn-0" class="p-5 rounded-xl font-bold text-lg md:text-xl shadow-lg transition-all active:scale-[0.98]">A</button>
+                <button onclick="handleAnswer(1)" id="btn-1" class="p-5 rounded-xl font-bold text-lg md:text-xl shadow-lg transition-all active:scale-[0.98]">B</button>
+                <button onclick="handleAnswer(2)" id="btn-2" class="p-5 rounded-xl font-bold text-lg md:text-xl shadow-lg transition-all active:scale-[0.98]">C</button>
+                <button onclick="handleAnswer(3)" id="btn-3" class="p-5 rounded-xl font-bold text-lg md:text-xl shadow-lg transition-all active:scale-[0.98]">D</button>
+            </div>
+            
+            <div id="feedback-bar" class="hidden mt-4 p-4 bg-red-600/90 text-center font-bold text-lg rounded-xl animate-fade-in">
+                ¡Incorrecto! Siguiente pregunta
+            </div>
+        </div>
+
+        <!-- Pantalla Feedback Final -->
+        <div id="feedback-screen" class="hidden absolute inset-0 z-50 flex items-center justify-center text-center p-8 animate-fade-in">
+            <h1 id="final-message" class="text-5xl md:text-7xl font-black drop-shadow-2xl px-4"></h1>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            { id: "#101", question: "¿Qué sistema obligaba a numerosos indígenas a trabajar para los españoles?", options: ["Encomienda", "Mita", "Trueque", "Curacazgo"], correct: 1},
+            { id: "#102", question: "¿Qué estaban haciendo los protagonistas al seguir las huellas?", options: ["Descansando", "Buscando a los desaparecidos", "Celebrando una fiesta", "Comerciando"], correct: 1 },
+            { id: "#103", question: "¿Dónde encontraron el mensaje?", options: ["En el templo", "En una cueva", "Enterrado entre la tierra", "En el río"], correct: 2 }
+        ];
+
+        let questions = [], currentQ = 0, errors = 0, timer = 20, interval, canAnswer = true;
+
+        function startQuiz() {
+            questions = [...allQuestions].sort(() => Math.random() - 0.5);
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            canAnswer = true;
+            timer = 20;
+            document.getElementById('feedback-bar').classList.add('hidden');
+            document.getElementById('timer').innerText = timer;
+            document.getElementById('question-id').innerText = questions[currentQ].id;
+            document.getElementById('q-text').innerText = questions[currentQ].question;
+            questions[currentQ].options.forEach((o, i) => {
+                const btn = document.getElementById(`btn-${i}`);
+                btn.innerText = o;
+                btn.className = "p-5 rounded-xl font-bold text-lg md:text-xl shadow-lg transition-all opacity-100 " + (i===0?"bg-red-600":i===1?"bg-blue-600":i===2?"bg-yellow-500":"bg-green-600");
+            });
+            interval = setInterval(() => {
+                timer--;
+                document.getElementById('timer').innerText = timer;
+                if(timer <= 0) handleAnswer(-1);
+            }, 1000);
+        }
+
+        function handleAnswer(index) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            clearInterval(interval);
+
+            if (index === questions[currentQ].correct) {
+                document.getElementById('quiz-ui').classList.add('hidden');
+                document.getElementById('feedback-screen').className = "absolute inset-0 z-50 flex items-center justify-center bg-green-600/95 text-center p-6 animate-fade-in";
+                document.getElementById('final-message').innerText = "¡Correcto!";
+                document.getElementById('feedback-screen').classList.remove('hidden');
+                setTimeout(() => document.getElementById('final-message').innerText = "Pista: Ir a este lugar", 2000);
+            } else {
+                errors++;
+                document.getElementById('feedback-bar').classList.remove('hidden');
+                questions[currentQ].options.forEach((_, i) => {
+                    const btn = document.getElementById(`btn-${i}`);
+                    btn.className = "p-5 rounded-xl font-bold text-lg md:text-xl shadow-lg transition-all " + (i === questions[currentQ].correct ? "opacity-100 border-4 border-white" : "opacity-30 grayscale");
+                });
+                
+                if (errors >= 3) {
+                    setTimeout(() => {
+                        document.getElementById('quiz-ui').classList.add('hidden');
+                        document.getElementById('feedback-screen').className = "absolute inset-0 z-50 flex items-center justify-center bg-red-600/95 text-center p-6 animate-fade-in";
+                        document.getElementById('final-message').innerText = "¡Perdiste!";
+                        document.getElementById('feedback-screen').classList.remove('hidden');
+                    }, 3000);
+                } else {
+                    setTimeout(() => {
+                        currentQ++;
+                        if(currentQ < questions.length) loadQuestion();
+                        else {
+                            document.getElementById('quiz-ui').classList.add('hidden');
+                            document.getElementById('feedback-screen').className = "absolute inset-0 z-50 flex items-center justify-center bg-red-600/95 text-center p-6 animate-fade-in";
+                            document.getElementById('final-message').innerText = "Fin del juego";
+                            document.getElementById('feedback-screen').classList.remove('hidden');
+                        }
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
